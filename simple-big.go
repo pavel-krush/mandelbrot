@@ -6,6 +6,7 @@ import (
 	"image/png"
 	big2 "math/big"
 	"os"
+	"sync"
 
 	"mandelbrot/fractal"
 	"mandelbrot/palette"
@@ -66,25 +67,32 @@ func main() {
 		Max: image.Point{X: screenMaxX, Y: screenMaxY},
 	})
 
-	// (x, y) - are pixel coords
+	var wg sync.WaitGroup
+
 	for y := screenMinY; y < screenMaxY; y++ {
-		_, _ = fmt.Fprintf(os.Stderr, "line %d of %d\n", y, screenHeight)
 		// (physX, physY) - are physical coordinates
 		physY := big2.NewFloat(float64(y))
 		physY.Mul(physY, scaleY)
 		physY.Add(physY, physMinY)
-		for x := screenMinX; x < screenMaxX; x++ {
-			physX := big2.NewFloat(float64(x))
-			physX.Mul(physX, scaleX)
-			physX.Add(physX, physMinX)
 
-			// get fractal value at the point
-			value := fractal.MandelbrotBig(physX, physY)
+		wg.Add(1)
+		go func(y int) {
+			for x := screenMinX; x < screenMaxX; x++ {
+				physX := big2.NewFloat(float64(x))
+				physX.Mul(physX, scaleX)
+				physX.Add(physX, physMinX)
 
-			// convert it to the color and set pixel color
-			img.Set(x, screenMaxY - y - 1, pal[int(float64(len(pal)) * value)])
-		}
+				// get fractal value at the point
+				value := fractal.MandelbrotBig(physX, physY)
+
+				// convert it to the color and set pixel color
+				img.Set(x, screenMaxY - y - 1, pal[int(float64(len(pal)) * value)])
+			}
+			wg.Done()
+		}(y)
 	}
+
+	wg.Wait()
 
 	err := png.Encode(os.Stdout, img)
 	if err != nil {
