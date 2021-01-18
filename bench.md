@@ -15,8 +15,13 @@ real	0m34,583s
 user	3m14,721s
 sys	0m3,520s
 
-# removed one allocation of gif.Float while calculating fractal alue
+# removed one allocation of big.Float while calculating fractal alue
 real	0m31,796s
 user	3m9,216s
 sys	0m3,457s
+
+# removed one more allocation of big.Float
+real	0m31,023s
+user	3m5,102s
+sys	0m3,314s
 
