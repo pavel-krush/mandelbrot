@@ -70,26 +70,25 @@ func main() {
 	var wg sync.WaitGroup
 
 	for y := screenMinY; y < screenMaxY; y++ {
-		// (physX, physY) - are physical coordinates
+		// physX := y * scaleY + physMinY
 		physY := big2.NewFloat(float64(y))
 		physY.Mul(physY, scaleY)
 		physY.Add(physY, physMinY)
 
 		wg.Add(1)
-		go func(y int) {
+		go func(y int, physY *big2.Float) {
+			physX := big2.NewFloat(0).Set(physMinX)
 			for x := screenMinX; x < screenMaxX; x++ {
-				physX := big2.NewFloat(float64(x))
-				physX.Mul(physX, scaleX)
-				physX.Add(physX, physMinX)
-
 				// get fractal value at the point
 				value := fractal.MandelbrotBig(physX, physY)
 
 				// convert it to the color and set pixel color
 				img.Set(x, screenMaxY - y - 1, pal[int(float64(len(pal)) * value)])
+
+				physX.Add(physX, scaleX)
 			}
 			wg.Done()
-		}(y)
+		}(y, physY)
 	}
 
 	wg.Wait()

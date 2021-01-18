@@ -20,12 +20,7 @@ func Mandelbrot(c complex128) float64 {
 	return 0
 }
 
-func bigLength(x *big.Float, y *big.Float) *big.Float {
-	xSquared := big.NewFloat(0).Mul(x, x)
-	ySquared := big.NewFloat(0).Mul(y, y)
-	sumOfSquares := big.NewFloat(0).Add(xSquared, ySquared)
-	return big.NewFloat(0).Sqrt(sumOfSquares)
-}
+var two = big.NewFloat(2.0)
 
 func MandelbrotBig(x *big.Float, y *big.Float) float64 {
 	const iterations = 256
@@ -33,10 +28,8 @@ func MandelbrotBig(x *big.Float, y *big.Float) float64 {
 
 	thresholdBig := big.NewFloat(threshold)
 
-	two := big.NewFloat(2.0)
-
-	retX := big.NewFloat(0).SetPrec(x.Prec())
-	retY := big.NewFloat(0).SetPrec(y.Prec())
+	retX := big.NewFloat(0)
+	retY := big.NewFloat(0)
 
 	for i := 0; i < iterations; i++ {
 		// calc real part: x^2 - y^2
@@ -52,9 +45,12 @@ func MandelbrotBig(x *big.Float, y *big.Float) float64 {
 		retX = newRetX.Add(newRetX, x)
 		retY = newRetY.Add(newRetY, y)
 
-		length := bigLength(retX, retY)
+		// calculate absolute value of complex number (retX, retY)
+		// reuse previous calculations of xSquared and ySquared
+		sumOfSquares := big.NewFloat(0).Add(xSquared, ySquared)
+		abs := sumOfSquares.Sqrt(sumOfSquares)
 
-		if length.Cmp(thresholdBig) > 0 {
+		if abs.Cmp(thresholdBig) > 0 {
 			return float64(i) / float64(iterations)
 		}
 	}
