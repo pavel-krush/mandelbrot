@@ -38,8 +38,8 @@ func MandelbrotBig(x *big.Float, y *big.Float) float64 {
 		newRetX := big.NewFloat(0).Sub(xSquared, ySquared)
 
 		// calc imaginary part: 2*x*y
-		xy := big.NewFloat(0).Mul(retX, retY)
-		newRetY := big.NewFloat(0).Mul(xy, two)
+		newRetY := big.NewFloat(0).Mul(retX, retY)
+		newRetY.Mul(newRetY, two)
 
 		// add (x, y)
 		retX = newRetX.Add(newRetX, x)
