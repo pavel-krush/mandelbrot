@@ -5,8 +5,12 @@
 // Renders a textured spinning cube using GLFW 3 and OpenGL 4.1 core forward-compatible profile.
 package main // import "github.com/go-gl/example/gl41core-cube"
 
+import "C"
 import (
 	"fmt"
+	"github.com/go-gl/gl/v4.1-core/gl"
+	"github.com/go-gl/glfw/v3.3/glfw"
+	"github.com/go-gl/mathgl/mgl32"
 	"go/build"
 	"image"
 	"image/draw"
@@ -15,10 +19,6 @@ import (
 	"os"
 	"runtime"
 	"strings"
-
-	"github.com/go-gl/gl/v4.1-core/gl"
-	"github.com/go-gl/glfw/v3.3/glfw"
-	"github.com/go-gl/mathgl/mgl32"
 )
 
 const windowWidth = 800
@@ -27,6 +27,18 @@ const windowHeight = 600
 func init() {
 	// GLFW event handling must run on the main OS thread
 	runtime.LockOSThread()
+}
+
+func cursorCallback(w *glfw.Window, xpos float64, ypos float64) {
+	fmt.Printf("mouse pos(%f, %f)\n", xpos, ypos)
+}
+
+func mouseButtonCallback(w *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
+	fmt.Printf("mouse button(%d, %d, %d)\n", button, action, mods)
+}
+
+func scrollCallback(w *glfw.Window, xoff float64, yoff float64) {
+	fmt.Printf("scroll(%f, %f)\n", xoff, yoff)
 }
 
 func main() {
@@ -45,6 +57,10 @@ func main() {
 		panic(err)
 	}
 	window.MakeContextCurrent()
+
+	window.SetCursorPosCallback(cursorCallback)
+	window.SetMouseButtonCallback(mouseButtonCallback)
+	window.SetScrollCallback(scrollCallback)
 
 	// Initialize Glow
 	if err := gl.Init(); err != nil {
@@ -251,7 +267,7 @@ void main() {
     fragTexCoord = vertTexCoord;
     gl_Position = projection * camera * model * vec4(vert, 1);
 }
-` + "\x00"
+`
 
 var fragmentShader = `
 #version 330
@@ -263,9 +279,10 @@ in vec2 fragTexCoord;
 out vec4 outputColor;
 
 void main() {
+	//outputColor = vec4(1.0, 0.0, 0.0, 1.0);
     outputColor = texture(tex, fragTexCoord);
 }
-` + "\x00"
+`
 
 var cubeVertices = []float32{
 	//  X, Y, Z, U, V

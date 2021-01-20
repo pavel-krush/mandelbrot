@@ -2,18 +2,23 @@ package main
 
 import (
 	"fmt"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/basicfont"
+	"golang.org/x/image/math/fixed"
 	"image"
+	"image/color"
+	"image/draw"
 	"image/png"
 	big2 "math/big"
 	"os"
 	"sync"
 
+	"mandelbrot/big"
 	"mandelbrot/fractal"
 	"mandelbrot/palette"
-	"mandelbrot/big"
 )
 
-const precision = 16
+const precision = 1024
 
 func main() {
 	args := os.Args
@@ -35,8 +40,8 @@ func main() {
 	screenWidth := screenMaxX - screenMinX
 	screenHeight := screenMaxY - screenMinY
 
-	initWidth := big2.NewFloat(3)
-	initHeight := big2.NewFloat(2)
+	initWidth := big2.NewFloat(3).SetPrec(precision)
+	initHeight := big2.NewFloat(2).SetPrec(precision)
 
 	scaledWidth := big2.NewFloat(0).Mul(initWidth, scale)
 	scaledHeight := big2.NewFloat(0).Mul(initHeight, scale)
@@ -93,9 +98,42 @@ func main() {
 
 	wg.Wait()
 
+	lineHeight := 13
+	strX := 2
+	strY := 0
+
+	strY+=lineHeight
+	drawString(img, strX, strY, fmt.Sprintf("cx    : %+.30f", cx))
+
+	strY+=lineHeight
+	drawString(img, strX, strY, fmt.Sprintf("cy    : %+.30f", cy))
+
+	strY+=lineHeight
+	drawString(img, strX, strY, fmt.Sprintf("xmin  : %+.30f", physMinX))
+
+	strY+=lineHeight
+	drawString(img, strX, strY, fmt.Sprintf("width : %+.30f", scaledWidth))
+
+	strY+=lineHeight
+	drawString(img, strX, strY, fmt.Sprintf("ymin  : %+.30f", physMinY))
+
+	strY+=lineHeight
+	drawString(img, strX, strY, fmt.Sprintf("height: %+.30f", scaledHeight))
+
 	err := png.Encode(os.Stdout, img)
 	if err != nil {
 		panic(err)
 	}
 }
 
+func drawString(img draw.Image, x int, y int, str string) {
+	dot := fixed.P(x, y)
+	d := font.Drawer{
+		Dst:  img,
+		Src:  image.NewUniform(color.RGBA{B: 0xFF, A: 0xFF}),
+		Face: basicfont.Face7x13,
+		Dot:  dot,
+	}
+	d.DrawString(str)
+
+}
