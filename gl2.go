@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"strings"
 	"unsafe"
+
+	"mandelbrot/graph"
 )
 
 func init() {
@@ -54,27 +56,20 @@ func main() {
 		-0.5, 0.5,
 	}
 
-	indicies := []uint32{
+	indices := []uint32{
 		0, 1, 2,
 		2, 3, 0,
 	}
 
-	var vao uint32
-	gl.GenVertexArrays(1, &vao)
-	gl.BindVertexArray(vao)
+	va := graph.NewVertexArray()
+	vb := graph.NewVertexBuffer(gl.Ptr(positions), 4 * 2 * int(unsafe.Sizeof(float32(0))))
 
-	var bufId uint32
-	gl.GenBuffers(1, &bufId)
-	gl.BindBuffer(gl.ARRAY_BUFFER, bufId)
-	gl.BufferData(gl.ARRAY_BUFFER, len(positions) * int(unsafe.Sizeof(float32(0))), gl.Ptr(positions), gl.STATIC_DRAW)
+	layout := graph.NewVertexBufferLayout()
+	layout.PushFloat(2)
 
-	gl.EnableVertexAttribArray(0)
-	gl.VertexAttribPointer(0, 2, gl.FLOAT, false, int32(unsafe.Sizeof(float32(0))) * 2, gl.PtrOffset(0))
+	va.AddBuffer(vb, layout)
 
-	var ibo uint32
-	gl.GenBuffers(1, &ibo)
-	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo)
-	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(indicies) * int(unsafe.Sizeof(uint32(0))), gl.Ptr(indicies), gl.STATIC_DRAW)
+	ib := graph.NewIndexBuffer(indices)
 
 	pg, err := glProgram(vs, fs)
 	if err != nil {
@@ -99,10 +94,14 @@ func main() {
 		gl.UseProgram(pg)
 		gl.Uniform4f(uColorLocation, r, 0.3, 0.8, 1.0)
 
-		gl.BindVertexArray(vao)
-		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo)
+		va.Bind()
+		ib.Bind()
 
 		gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, nil)
+		err := gl.GetError()
+		if err != gl.NO_ERROR {
+			fmt.Printf("gl error: %d\n", err)
+		}
 
 		if r > 1.0 {
 			increment = -0.05
@@ -118,6 +117,11 @@ func main() {
 	}
 
 	gl.DeleteProgram(pg)
+
+	vb.Destroy()
+	ib.Destroy()
+
+	glfw.Terminate()
 }
 
 var vs = `
