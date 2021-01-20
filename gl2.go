@@ -6,7 +6,6 @@ import (
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"log"
 	"runtime"
-	"strings"
 	"unsafe"
 
 	"mandelbrot/graph"
@@ -71,14 +70,10 @@ func main() {
 
 	ib := graph.NewIndexBuffer(indices)
 
-	pg, err := glProgram(vs, fs)
+	shader, err := graph.NewShader("res/simple.shader")
 	if err != nil {
 		panic(err)
 	}
-
-	gl.UseProgram(pg)
-
-	uColorLocation := gl.GetUniformLocation(pg, gl.Str("u_Color\x00"))
 
 	gl.BindVertexArray(0)
 	gl.UseProgram(0)
@@ -90,8 +85,8 @@ func main() {
 	for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 
-		gl.UseProgram(pg)
-		gl.Uniform4f(uColorLocation, r, 0.3, 0.8, 1.0)
+		shader.Bind()
+		_ = shader.SetUniform4f("u_Color", r, 0.3, 0.8, 1.0)
 
 		va.Bind()
 		ib.Bind()
@@ -115,88 +110,9 @@ func main() {
 		glfw.PollEvents()
 	}
 
-	gl.DeleteProgram(pg)
-
 	vb.Destroy()
 	ib.Destroy()
+	shader.Destroy()
 
 	glfw.Terminate()
-}
-
-var vs = `
-#version 330 core
-
-layout(location=0) in vec4 position;
-
-void main() {
-	gl_Position = position;
-}`
-
-var fs = `
-#version 330 core
-
-layout(location=0) out vec4 color;
-
-uniform vec4 u_Color;
-
-void main() {
-	color = u_Color;
-}`
-
-func glProgram(vertexShaderSource, fragmentShaderSource string) (uint32, error) {
-	vertexShader, err := glShader(vertexShaderSource, gl.VERTEX_SHADER)
-	if err != nil {
-		return 0, err
-	}
-
-	fragmentShader, err := glShader(fragmentShaderSource, gl.FRAGMENT_SHADER)
-	if err != nil {
-		return 0, err
-	}
-
-	program := gl.CreateProgram()
-
-	gl.AttachShader(program, vertexShader)
-	gl.AttachShader(program, fragmentShader)
-	gl.LinkProgram(program)
-
-	var status int32
-	gl.GetProgramiv(program, gl.LINK_STATUS, &status)
-	if status == gl.FALSE {
-		var logLength int32
-		gl.GetProgramiv(program, gl.INFO_LOG_LENGTH, &logLength)
-
-		log := strings.Repeat("\x00", int(logLength+1))
-		gl.GetProgramInfoLog(program, logLength, nil, gl.Str(log))
-
-		return 0, fmt.Errorf("failed to link program: %v", log)
-	}
-
-	gl.DeleteShader(vertexShader)
-	gl.DeleteShader(fragmentShader)
-
-	return program, nil
-}
-
-func glShader(source string, shaderType uint32) (uint32, error) {
-	shader := gl.CreateShader(shaderType)
-
-	csources, free := gl.Strs(source)
-	gl.ShaderSource(shader, 1, csources, nil)
-	free()
-	gl.CompileShader(shader)
-
-	var status int32
-	gl.GetShaderiv(shader, gl.COMPILE_STATUS, &status)
-	if status == gl.FALSE {
-		var logLength int32
-		gl.GetShaderiv(shader, gl.INFO_LOG_LENGTH, &logLength)
-
-		log := strings.Repeat("\x00", int(logLength+1))
-		gl.GetShaderInfoLog(shader, logLength, nil, gl.Str(log))
-
-		return 0, fmt.Errorf("failed to compile %v: %v", source, log)
-	}
-
-	return shader, nil
 }
