@@ -18,12 +18,15 @@ type Shader struct {
 	fragmentSource string
 
 	rendererId uint32
+
+	uniformCache map[string]int32
 }
 
 func NewShader(filePath string) (*Shader, error) {
 	var err error
 	ret := &Shader{
 		filePath: filePath,
+		uniformCache: make(map[string]int32),
 	}
 
 	err = ret.readSource()
@@ -173,9 +176,17 @@ func (s *Shader) compileShader(shaderType uint32, shaderSource string) (uint32, 
 }
 
 func (s *Shader) SetUniform4f(name string, v0, v1, v2, v3 float32) error {
-	location := s.getUniformLocation(name + "\x00")
-	if location == -1 {
-		return errors.Errorf("uniform \"%s\" not found", name)
+	var location int32
+	var ok bool
+
+	location, ok = s.uniformCache[name]
+	if !ok {
+		location := s.getUniformLocation(name + "\x00")
+		if location == -1 {
+			return errors.Errorf("uniform \"%s\" not found", name)
+		}
+
+		s.uniformCache[name] = location
 	}
 
 	gl.Uniform4f(location, v0, v1, v2, v3)
