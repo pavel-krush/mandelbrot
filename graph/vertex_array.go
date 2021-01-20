@@ -14,7 +14,7 @@ func NewVertexArray() *VertexArray {
 	gl.GenVertexArrays(1, &ret.rendererId)
 	gl.BindVertexArray(ret.rendererId)
 
-	return &VertexArray{}
+	return &ret
 }
 
 func (va *VertexArray) AddBuffer(vb *VertexBuffer, layout *VertexBufferLayout) {

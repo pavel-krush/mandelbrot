@@ -88,7 +88,6 @@ func main() {
 	r := float32(0.0)
 	increment := float32(0.05)
 	for !window.ShouldClose() {
-
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 
 		gl.UseProgram(pg)
