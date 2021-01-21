@@ -49,6 +49,9 @@ func main() {
 		panic(err)
 	}
 
+	version := gl.GoStr(gl.GetString(gl.VERSION))
+	fmt.Println("OpenGL version", version)
+
 	positions := []float32{
 		-0.5, -0.5,
 		0.5, -0.5,

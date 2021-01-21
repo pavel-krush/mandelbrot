@@ -155,7 +155,7 @@ func (s *Shader) compile() error {
 func (s *Shader) compileShader(shaderType uint32, shaderSource string) (uint32, error) {
 	shader := gl.CreateShader(shaderType)
 
-	cSources, free := gl.Strs(shaderSource)
+	cSources, free := gl.Strs(shaderSource + "\x00")
 	gl.ShaderSource(shader, 1, cSources, nil)
 	free()
 	gl.CompileShader(shader)
