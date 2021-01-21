@@ -79,27 +79,17 @@ func main() {
 		panic(err)
 	}
 
-	gl.BindVertexArray(0)
-	gl.UseProgram(0)
-	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
-	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
+	renderer := graph.NewRenderer()
 
 	r := float32(0.0)
 	increment := float32(0.05)
 	for !window.ShouldClose() {
-		gl.Clear(gl.COLOR_BUFFER_BIT)
+		renderer.Clear()
 
 		shader.Bind()
 		_ = shader.SetUniform4f("u_Color", r, 0.3, 0.8, 1.0)
 
-		va.Bind()
-		ib.Bind()
-
-		gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, nil)
-		err := gl.GetError()
-		if err != gl.NO_ERROR {
-			fmt.Printf("gl error: %d\n", err)
-		}
+		renderer.Draw(va, ib, shader)
 
 		if r > 1.0 {
 			increment = -0.05
