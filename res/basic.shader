@@ -6,8 +6,13 @@ layout(location=1) in vec2 texCoord;
 
 out vec2 v_TexCoord;
 
+uniform mat4 u_MVP; // model-view-projection matrix
+
 void main() {
-	gl_Position = position;
+  // setup vertex position
+	gl_Position = position * u_MVP;
+
+	// pass texture coordinates to fragment shader
 	v_TexCoord = texCoord;
 }
 

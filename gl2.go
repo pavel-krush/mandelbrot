@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
+	"github.com/go-gl/mathgl/mgl32"
 	_ "image/png"
 	"log"
 	"runtime"
@@ -73,10 +74,11 @@ func main() {
 	layout := graph.NewVertexBufferLayout()
 	layout.PushFloat(2)
 	layout.PushFloat(2)
-
 	va.AddBuffer(vb, layout)
 
 	ib := graph.NewIndexBuffer(indices)
+
+	proj := mgl32.Ortho(-2.0, 2.0, -1.5, 1.5, -1, 1)
 
 	shader, err := graph.NewShader("res/basic.shader")
 	if err != nil {
@@ -96,6 +98,7 @@ func main() {
 		shader.Bind()
 		texture.Bind(0)
 		shader.SetUniform1i("u_Texture", 0)
+		shader.SetUniformMat4f("u_MVP", proj)
 		renderer.Draw(va, ib, shader)
 
 		window.SwapBuffers()
