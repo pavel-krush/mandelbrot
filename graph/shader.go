@@ -175,26 +175,25 @@ func (s *Shader) compileShader(shaderType uint32, shaderSource string) (uint32, 
 	return shader, nil
 }
 
-func (s *Shader) SetUniform4f(name string, v0, v1, v2, v3 float32) error {
-	var location int32
-	var ok bool
+func (s *Shader) SetUniform1i(name string, v0 int32) {
+	gl.Uniform1i(s.getUniformLocation(name), v0)
+}
 
-	location, ok = s.uniformCache[name]
-	if !ok {
-		location := s.getUniformLocation(name + "\x00")
-		if location == -1 {
-			return errors.Errorf("uniform \"%s\" not found", name)
-		}
-
-		s.uniformCache[name] = location
-	}
-
-	gl.Uniform4f(location, v0, v1, v2, v3)
-
-	return nil
+func (s *Shader) SetUniform4f(name string, v0, v1, v2, v3 float32) {
+	gl.Uniform4f(s.getUniformLocation(name), v0, v1, v2, v3)
 }
 
 func (s *Shader) getUniformLocation(name string) int32 {
-	// TODO: cache
-	return gl.GetUniformLocation(s.rendererId, gl.Str(name))
+	var location int32
+	var ok bool
+
+	nameZeroed := name + "\x00"
+
+	location, ok = s.uniformCache[nameZeroed]
+	if !ok {
+		location = gl.GetUniformLocation(s.rendererId, gl.Str(nameZeroed))
+		s.uniformCache[nameZeroed] = location
+	}
+
+	return s.uniformCache[nameZeroed]
 }

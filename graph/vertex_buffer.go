@@ -10,7 +10,7 @@ type VertexBuffer struct {
 	rendererId uint32
 }
 
-func NewVertexBuffer(data unsafe.Pointer , size int) *VertexBuffer {
+func NewVertexBuffer(data unsafe.Pointer, size int) *VertexBuffer {
 	ret := VertexBuffer{}
 
 	gl.GenBuffers(1, &ret.rendererId)

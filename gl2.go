@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
+	_ "image/png"
 	"log"
 	"runtime"
 	"unsafe"
@@ -53,10 +54,10 @@ func main() {
 	fmt.Println("OpenGL version", version)
 
 	positions := []float32{
-		-0.5, -0.5,
-		0.5, -0.5,
-		0.5, 0.5,
-		-0.5, 0.5,
+		-0.5, -0.5, 0.0, 0.0,
+		0.5, -0.5, 1.0, 0.0,
+		0.5, 0.5, 1.0, 1.0,
+		-0.5, 0.5, 0.0, 1.0,
 	}
 
 	indices := []uint32{
@@ -65,9 +66,9 @@ func main() {
 	}
 
 	va := graph.NewVertexArray()
-	vb := graph.NewVertexBuffer(gl.Ptr(positions), 4 * 2 * int(unsafe.Sizeof(float32(0))))
-
+	vb := graph.NewVertexBuffer(gl.Ptr(positions), 4*4*int(unsafe.Sizeof(float32(0))))
 	layout := graph.NewVertexBufferLayout()
+	layout.PushFloat(2)
 	layout.PushFloat(2)
 
 	va.AddBuffer(vb, layout)
@@ -79,31 +80,26 @@ func main() {
 		panic(err)
 	}
 
+	texture, err := graph.NewTexture("res/texture.png")
+	if err != nil {
+		panic(err)
+	}
+
 	renderer := graph.NewRenderer()
 
-	r := float32(0.0)
-	increment := float32(0.05)
 	for !window.ShouldClose() {
 		renderer.Clear()
 
 		shader.Bind()
-		_ = shader.SetUniform4f("u_Color", r, 0.3, 0.8, 1.0)
-
+		texture.Bind(0)
+		shader.SetUniform1i("u_Texture", 0)
 		renderer.Draw(va, ib, shader)
 
-		if r > 1.0 {
-			increment = -0.05
-		} else if r < 0.0 {
-			increment = 0.05
-		}
-
-		r += increment
-
-		// Maintenance
 		window.SwapBuffers()
 		glfw.PollEvents()
 	}
 
+	texture.Destroy()
 	vb.Destroy()
 	ib.Destroy()
 	shader.Destroy()
