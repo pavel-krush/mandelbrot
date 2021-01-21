@@ -65,6 +65,9 @@ func main() {
 		2, 3, 0,
 	}
 
+	gl.Enable(gl.BLEND)
+	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+
 	va := graph.NewVertexArray()
 	vb := graph.NewVertexBuffer(gl.Ptr(positions), 4*4*int(unsafe.Sizeof(float32(0))))
 	layout := graph.NewVertexBufferLayout()
