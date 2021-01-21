@@ -70,7 +70,7 @@ func main() {
 
 	ib := graph.NewIndexBuffer(indices)
 
-	shader, err := graph.NewShader("res/simple.shader")
+	shader, err := graph.NewShader("res/basic.shader")
 	if err != nil {
 		panic(err)
 	}
