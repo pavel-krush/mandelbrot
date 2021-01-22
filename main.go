@@ -5,8 +5,11 @@ import (
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/go-gl/mathgl/mgl32"
+	"image"
 	_ "image/png"
 	"log"
+	"mandelbrot/fractal"
+	"mandelbrot/palette"
 	"runtime"
 	"unsafe"
 
@@ -17,23 +20,49 @@ func init() {
 	runtime.LockOSThread()
 }
 
-func GLDebugMessageCallback(source uint32,
-	gltype uint32,
-	id uint32,
-	severity uint32,
-	length int32,
-	message string,
-	userParam unsafe.Pointer) {
-	fmt.Printf("GLDebugMessage(gltype=%d, id=%d, severity=%d, length=%d, message=\"%s\", userParam=%p)\n",
-		gltype, id, severity, length, message, userParam)
-}
-
 const (
 	windowWidth = 640
 	windowHeight = 480
+	initPhysWidth = 3.0
+	initPhysHeight = 2.0
 )
 
+func GenerateMandelbrot(target *image.RGBA, cx float64, cy float64, scale float64) {
+	width := target.Rect.Max.X
+	height := target.Rect.Max.Y
+
+	// Calculate physical width and height
+	physWidth := initPhysWidth * scale
+	physHeight := initPhysHeight * scale
+
+	// Scale physical bounds
+	physMinX := cx - (physWidth / 2)
+	physMinY := cy - (physHeight / 2)
+
+	// Calculate pixel-to-physical scale
+	scaleX := physWidth / float64(width)
+	scaleY := physHeight / float64(height)
+
+	pal := palette.CreatePaletteGrayscaleRecursive(256)
+
+	// (x, y) - are pixel coords
+	for y := 0; y < height; y++ {
+		// (physX, physY) - are physical coordinates
+		physY := float64(y)*scaleY + physMinY
+		for x := 0; x < width; x++ {
+			physX := float64(x)*scaleX + physMinX
+
+			// get fractal value at the point
+			value := fractal.Mandelbrot(complex(physX, physY))
+
+			// convert it to the color and set pixel color
+			target.Set(x, y, pal[int(float64(len(pal)) * value)])
+		}
+	}
+}
+
 func main() {
+
 	if err := glfw.Init(); err != nil {
 		log.Fatalln("failed to initialize glfw:", err)
 	}
@@ -90,10 +119,15 @@ func main() {
 		panic(err)
 	}
 
-	texture, err := graph.NewTexture("res/texture.png")
-	if err != nil {
-		panic(err)
-	}
+	img := image.NewRGBA(image.Rectangle{
+		Min: image.Point{X: 0, Y: 0},
+		Max: image.Point{X: windowWidth, Y: windowHeight},
+	})
+
+	GenerateMandelbrot(img, -0.7, 0, 1)
+
+	texture := graph.NewTexture(windowWidth, windowHeight)
+	texture.SetImageData(img.Pix)
 
 	renderer := graph.NewRenderer()
 
@@ -114,6 +148,4 @@ func main() {
 	vb.Destroy()
 	ib.Destroy()
 	shader.Destroy()
-
-	glfw.Terminate()
 }

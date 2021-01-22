@@ -9,17 +9,45 @@ import (
 )
 
 type Texture struct {
-	filePath string
-
 	rendererId uint32
 
 	width int
 	height int
 }
 
-func NewTexture(filePath string) (*Texture, error) {
+func NewTexture(width int, height int) *Texture {
 	ret := &Texture{
-		filePath: filePath,
+		width:      width,
+		height:     height,
+	}
+
+	gl.GenTextures(1, &ret.rendererId)
+	ret.Bind(0)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+
+	return ret
+}
+
+func (t *Texture) SetImageData(data []uint8) {
+	t.Bind(0)
+
+	gl.TexImage2D(
+		gl.TEXTURE_2D,
+		0,
+		gl.RGBA,
+		int32(t.width),
+		int32(t.height),
+		0,
+		gl.RGBA,
+		gl.UNSIGNED_BYTE,
+		gl.Ptr(data))
+}
+
+func LoadTexturePNG(filePath string) (*Texture, error) {
+	ret := &Texture{
 	}
 
 	imgFile, err := os.Open(filePath)
@@ -37,6 +65,9 @@ func NewTexture(filePath string) (*Texture, error) {
 		return nil, errors.New("unsupported stride")
 	}
 
+	ret.width = rgba.Rect.Size().X
+	ret.height = rgba.Rect.Size().Y
+
 	draw.Draw(rgba, rgba.Bounds(), img, image.Point{0, 0}, draw.Src)
 
 	gl.GenTextures(1, &ret.rendererId)
@@ -48,9 +79,9 @@ func NewTexture(filePath string) (*Texture, error) {
 	gl.TexImage2D(
 		gl.TEXTURE_2D,
 		0,
-		gl.RGBA,
-		int32(rgba.Rect.Size().X),
-		int32(rgba.Rect.Size().Y),
+		gl.RGBA8,
+		int32(ret.width),
+		int32(ret.height),
 		0,
 		gl.RGBA,
 		gl.UNSIGNED_BYTE,
