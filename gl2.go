@@ -28,6 +28,11 @@ func GLDebugMessageCallback(source uint32,
 		gltype, id, severity, length, message, userParam)
 }
 
+const (
+	windowWidth = 640
+	windowHeight = 480
+)
+
 func main() {
 	if err := glfw.Init(); err != nil {
 		log.Fatalln("failed to initialize glfw:", err)
@@ -39,7 +44,7 @@ func main() {
 	glfw.WindowHint(glfw.ContextVersionMinor, 1)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
-	window, err := glfw.CreateWindow(640, 480, "gl test", nil, nil)
+	window, err := glfw.CreateWindow(windowWidth, windowHeight, "gl test", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -55,10 +60,10 @@ func main() {
 	fmt.Println("OpenGL version", version)
 
 	positions := []float32{
-		-0.5, -0.5, 0.0, 0.0,
-		0.5, -0.5, 1.0, 0.0,
-		0.5, 0.5, 1.0, 1.0,
-		-0.5, 0.5, 0.0, 1.0,
+		0, 0, 0.0, 0.0,
+		windowWidth, 0, 1.0, 0.0,
+		windowWidth, windowHeight, 1.0, 1.0,
+		0, windowHeight, 0.0, 1.0,
 	}
 
 	indices := []uint32{
@@ -78,7 +83,7 @@ func main() {
 
 	ib := graph.NewIndexBuffer(indices)
 
-	proj := mgl32.Ortho(-2.0, 2.0, -1.5, 1.5, -1, 1)
+	proj := mgl32.Ortho(0.0, float32(windowWidth), 0, float32(windowHeight), -1.0, 1.0)
 
 	shader, err := graph.NewShader("res/basic.shader")
 	if err != nil {

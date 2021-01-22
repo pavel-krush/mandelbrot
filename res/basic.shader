@@ -10,7 +10,7 @@ uniform mat4 u_MVP; // model-view-projection matrix
 
 void main() {
   // setup vertex position
-	gl_Position = position * u_MVP;
+	gl_Position = u_MVP * position;
 
 	// pass texture coordinates to fragment shader
 	v_TexCoord = texCoord;
