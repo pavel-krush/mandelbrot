@@ -11,7 +11,7 @@ import (
 	"mandelbrot/palette"
 )
 
-func main() {
+func main_simple() {
 	args := os.Args
 	if len(args) != 4 {
 		fmt.Printf("usage: mbrot <cx> <cy> <scale>\n")

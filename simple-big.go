@@ -18,9 +18,8 @@ import (
 	"mandelbrot/palette"
 )
 
-const precision = 1024
-
-func main() {
+func main_simple_big() {
+	const precision = 1024
 	args := os.Args
 	if len(args) != 4 {
 		fmt.Printf("usage: mbrot <cx> <cy> <scale>\n")

@@ -14,7 +14,7 @@ func mustParseBigFloat(s string) *big.Float {
 	return z
 }
 
-func main() {
+func main_simple_gen() {
 	cxStr := "-0.74920101504"
 	cyStr := "-0.0999999899"
 	scaleStr := "1.0"

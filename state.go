@@ -1,6 +1,8 @@
 package main
 
-import "math/big"
+import (
+	"math/big"
+)
 
 type State struct {
 	precision uint       // floats precision
@@ -36,9 +38,14 @@ func (s *State) SetPrecision(precision uint) {
 	s.scale.SetPrec(s.precision)
 }
 
-// Set center coordinates and a scale factor
+// Set center coordinates, and a scale factor
 func (s *State) SetCoords(cx, cy, scale *big.Float) {
 	s.cx = cx
 	s.cy = cy
 	s.scale = scale
+}
+
+// Return center coordinates, and a scale factor
+func (s *State) GetCoords() (*big.Float, *big.Float, *big.Float) {
+	return s.cx, s.cy, s.scale
 }
