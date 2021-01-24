@@ -9,13 +9,25 @@ type Renderer struct {
 
 }
 
+type Drawable interface {
+	GetVertexArray() *VertexArray
+	GetIndexBuffer() *IndexBuffer
+	GetShader() *Shader
+	GetTexture() *Texture
+}
+
 func NewRenderer() *Renderer {
 	return nil
 }
 
-func (r *Renderer) Draw(va *VertexArray, ib *IndexBuffer, shader *Shader) {
+func (r *Renderer) Draw(object Drawable, x int, y int) {
+	shader := object.GetShader()
 	shader.Bind()
-	va.Bind()
+	shader.SetUniform1i("u_Texture", 0)
+	shader.SetUniform2f("coords", float32(x), float32(y))
+
+	object.GetVertexArray().Bind()
+	ib := object.GetIndexBuffer()
 	ib.Bind()
 
 	gl.DrawElements(gl.TRIANGLES, ib.GetCount(), gl.UNSIGNED_INT, nil)

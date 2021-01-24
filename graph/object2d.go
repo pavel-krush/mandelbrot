@@ -8,19 +8,38 @@ import (
 )
 
 type Object2D struct {
-	vertices []mgl32.Vec4
-
+	shader *Shader
+	texture *Texture
 	va *VertexArray
 	ib *IndexBuffer
+
+	vertices []mgl32.Vec4
+	ibData []uint32
 }
 
-func NewObject2d() *Object2D {
-	ret := &Object2D{}
-	return ret
+func NewObject2d(shader *Shader, texture *Texture) (*Object2D, error) {
+	if shader == nil {
+		return nil, errors.Errorf("shader required")
+	}
+
+	if texture == nil {
+		return nil, errors.Errorf("texture required")
+	}
+
+	ret := &Object2D{
+		shader: shader,
+		texture: texture,
+	}
+
+	return ret, nil
 }
 
 func (o *Object2D) AddVertex(vCoords mgl32.Vec2, texCoords mgl32.Vec2) {
 	o.vertices = append(o.vertices, mgl32.Vec4{vCoords[0], vCoords[1], texCoords[0], texCoords[1]})
+}
+
+func (o *Object2D) AddIndexBufferData(data ...uint32) {
+	o.ibData = append(o.ibData, data...)
 }
 
 func (o *Object2D) Compile() error {
@@ -42,40 +61,30 @@ func (o *Object2D) Compile() error {
 	o.va = NewVertexArray()
 	o.va.AddBuffer(vb, layout)
 
-	// Create index buffer
-	var indexBufferData []uint32
-
-	var v0, v1, v2 uint32 = 0, 1, 2
-	last := false
-	for {
-		// Create polygon
-		indexBufferData = append(indexBufferData, v0)
-		indexBufferData = append(indexBufferData, v1)
-		indexBufferData = append(indexBufferData, v2)
-
-		if last {
-			break
-		}
-
-		// Advance vertex indices
-		v0 = v1
-		v1 = v2
-		v2++
-		if v2 == uint32(len(o.vertices) - 1) {
-			v2 = 0
-			last = true
-		}
-	}
-
-	o.ib = NewIndexBuffer(indexBufferData)
+	// Setup index buffer
+	o.ib = NewIndexBuffer(o.ibData)
 
 	return nil
 }
 
-func (o *Object2D) Draw() {
-	//shader.Bind()
-	//texture.Bind(0)
-	//shader.SetUniform1i("u_Texture", 0)
-	//shader.SetUniformMat4f("u_MVP", proj)
-	//renderer.Draw(va, ib, shader)
+func (o *Object2D) Destroy() {
+	o.va.Destroy()
+	o.ib.Destroy()
+}
+
+// Drawable interface
+func (o *Object2D) GetVertexArray() *VertexArray {
+	return o.va
+}
+
+func (o *Object2D) GetIndexBuffer() *IndexBuffer {
+	return o.ib
+}
+
+func (o *Object2D) GetShader() *Shader {
+	return o.shader
+}
+
+func (o *Object2D) GetTexture() *Texture {
+	return o.texture
 }
