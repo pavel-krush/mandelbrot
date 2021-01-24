@@ -1,5 +1,5 @@
 package main
-
+/*
 import (
 	"fmt"
 	"golang.org/x/image/font"
@@ -136,3 +136,4 @@ func drawString(img draw.Image, x int, y int, str string) {
 	d.DrawString(str)
 
 }
+*/

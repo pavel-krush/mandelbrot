@@ -2,15 +2,16 @@ package main
 
 import (
 	"fmt"
-	"image"
-	"log"
-	"mandelbrot/fractal"
-	"mandelbrot/graph"
-	"mandelbrot/palette"
-	"runtime"
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/go-gl/mathgl/mgl32"
+	"image"
+	"log"
+	"mandelbrot/fractal/mandelbrot"
+	"mandelbrot/graph"
+	"runtime"
+	"sync"
+	"time"
 )
 
 const (
@@ -36,6 +37,9 @@ type Application struct {
 	fractalImg *image.RGBA // The image object where fractal will be drawn
 	fractalTexture *graph.Texture // OpenGL texture which will be rendered on an fractalObject
 	shader *graph.Shader // The main shader
+
+	refreshTexture bool
+	refreshTextureMu sync.Mutex
 }
 
 func NewApplication(windowWidth, windowHeight int, windowTitle string) *Application {
@@ -50,21 +54,52 @@ func NewApplication(windowWidth, windowHeight int, windowTitle string) *Applicat
 	return ret
 }
 
+func (a *Application) LockRefreshTexture() {
+	a.refreshTextureMu.Lock()
+}
+
+func (a *Application) UnlockRefreshTexture() {
+	a.refreshTextureMu.Unlock()
+}
+
 func (a *Application) RegenerateFractal() {
-	cx, cy, cscale := a.state.GetCoords()
+	cx, cy, scale := a.state.GetCoords()
 
-	x, _ := cx.Float64()
-	y, _ := cy.Float64()
-	scale, _ := cscale.Float64()
+	lastUpdated := time.Now()
+	lastUpdatedPtr := &lastUpdated
 
-	GenerateMandelbrot(a.fractalImg, x, y, scale)
-	a.fractalTexture.SetImageData(a.fractalImg.Pix)
+	progress := func(progress float32) {
+		now := time.Now()
+		if now.Sub(*lastUpdatedPtr) > time.Millisecond * 100 {
+			a.LockRefreshTexture()
+			a.refreshTexture = true
+			a.UnlockRefreshTexture()
+		}
+		fmt.Printf("%.2f%% done\n", progress * 100)
+	}
+
+	done := func() {
+		a.refreshTexture = true
+	}
+
+	generator := mandelbrot.NewFloat64Default()
+	generator.Generate(a.fractalImg, cx, cy, scale, progress, done)
 }
 
 func (a *Application) Run() {
 	a.Start()
 
 	for !a.window.ShouldClose() {
+		// Refresh GL texture from buffer if requested to do so
+		a.LockRefreshTexture()
+		if a.refreshTexture {
+			a.refreshTexture = false
+			a.UnlockRefreshTexture()
+			a.fractalTexture.SetImageData(a.fractalImg.Pix)
+		} else {
+			a.UnlockRefreshTexture()
+		}
+
 		// Clear scene
 		a.renderer.Clear()
 
@@ -163,38 +198,4 @@ func (a *Application) Terminate() {
 	a.fractalObject.Destroy()
 	a.fractalTexture.Destroy()
 	a.shader.Destroy()
-}
-
-func GenerateMandelbrot(target *image.RGBA, cx float64, cy float64, scale float64) {
-	width := target.Rect.Max.X
-	height := target.Rect.Max.Y
-
-	// Calculate physical width and height
-	physWidth := initPhysWidth * scale
-	physHeight := initPhysHeight * scale
-
-	// Scale physical bounds
-	physMinX := cx - (physWidth / 2)
-	physMinY := cy - (physHeight / 2)
-
-	// Calculate pixel-to-physical scale
-	scaleX := physWidth / float64(width)
-	scaleY := physHeight / float64(height)
-
-	pal := palette.CreatePaletteGrayscaleRecursive(256)
-
-	// (x, y) - are pixel coords
-	for y := 0; y < height; y++ {
-		// (physX, physY) - are physical coordinates
-		physY := float64(y)*scaleY + physMinY
-		for x := 0; x < width; x++ {
-			physX := float64(x)*scaleX + physMinX
-
-			// get fractal value at the point
-			value := fractal.Mandelbrot(complex(physX, physY))
-
-			// convert it to the color and set pixel color
-			target.Set(x, y, pal[int(float64(len(pal)) * value)])
-		}
-	}
 }

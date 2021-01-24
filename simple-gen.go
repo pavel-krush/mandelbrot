@@ -1,5 +1,5 @@
 package main
-
+/*
 import (
 	"fmt"
 	"math/big"
@@ -36,3 +36,4 @@ func main_simple_gen() {
 		fmt.Printf("%d - %.100f\n", i, scale)
 	}
 }
+*/

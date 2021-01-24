@@ -1,5 +1,6 @@
 package main
 
+/*
 import (
 	"fmt"
 	"image"
@@ -89,3 +90,4 @@ func main_simple() {
 	}
 }
 
+*/
