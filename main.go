@@ -21,7 +21,7 @@ func init() {
 }
 
 const (
-	windowWidth = 640
+	windowWidth  = 640
 	windowHeight = 480
 	initPhysWidth = 3.0
 	initPhysHeight = 2.0
@@ -88,36 +88,17 @@ func main() {
 	version := gl.GoStr(gl.GetString(gl.VERSION))
 	fmt.Println("OpenGL version", version)
 
-	positions := []float32{
-		0, 0, 0.0, 0.0,
-		windowWidth, 0, 1.0, 0.0,
-		windowWidth, windowHeight, 1.0, 1.0,
-		0, windowHeight, 0.0, 1.0,
-	}
-
-	indices := []uint32{
-		0, 1, 2,
-		2, 3, 0,
-	}
-
 	gl.Enable(gl.BLEND)
 	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
-	va := graph.NewVertexArray()
-	vb := graph.NewVertexBuffer(gl.Ptr(positions), 4*4*int(unsafe.Sizeof(float32(0))))
-	layout := graph.NewVertexBufferLayout()
-	layout.PushFloat(2)
-	layout.PushFloat(2)
-	va.AddBuffer(vb, layout)
-
-	ib := graph.NewIndexBuffer(indices)
-
-	proj := mgl32.Ortho(0.0, float32(windowWidth), 0, float32(windowHeight), -1.0, 1.0)
+	proj := mgl32.Ortho(0.0, float32(windowWidth), float32(windowHeight), 0, -1, 1)
 
 	shader, err := graph.NewShader("res/basic.shader")
 	if err != nil {
 		panic(err)
 	}
+	shader.Bind()
+	shader.SetUniformMat4f("u_MVP", proj)
 
 	img := image.NewRGBA(image.Rectangle{
 		Min: image.Point{X: 0, Y: 0},
@@ -129,23 +110,50 @@ func main() {
 	texture := graph.NewTexture(windowWidth, windowHeight)
 	texture.SetImageData(img.Pix)
 
+	// Create fractal render object
+	fractalObject, err := graph.NewObject2d(shader, texture)
+	if err != nil {
+		panic(err)
+	}
+
+	fractalObject.AddVertex(mgl32.Vec2{0, 0}, mgl32.Vec2{0.0, 0.0})
+	fractalObject.AddVertex(mgl32.Vec2{100, 0}, mgl32.Vec2{1.0, 0.0})
+	fractalObject.AddVertex(mgl32.Vec2{100, 100}, mgl32.Vec2{1.0, 1.0})
+	fractalObject.AddVertex(mgl32.Vec2{0, 100}, mgl32.Vec2{0.0, 1.0})
+
+	fractalObject.AddIndexBufferData(0, 1, 2)
+	fractalObject.AddIndexBufferData(2, 3, 0)
+
+	err = fractalObject.Compile()
+	if err != nil {
+		panic(err)
+	}
+
 	renderer := graph.NewRenderer()
+
+	x := 0
+	delta := 3
+
+	maxX := windowWidth - 100
 
 	for !window.ShouldClose() {
 		renderer.Clear()
 
-		shader.Bind()
-		texture.Bind(0)
-		shader.SetUniform1i("u_Texture", 0)
-		shader.SetUniformMat4f("u_MVP", proj)
-		renderer.Draw(va, ib, shader)
+		renderer.Draw(fractalObject, x, windowHeight / 2 - 100 / 2)
+		renderer.Draw(fractalObject, maxX - x, windowHeight / 2 - 100 / 2)
+
+		x += delta
+		if x < 0 || x > maxX {
+			delta = -delta
+			x += delta
+		}
 
 		window.SwapBuffers()
 		glfw.PollEvents()
 	}
 
+	fractalObject.Destroy()
+
 	texture.Destroy()
-	vb.Destroy()
-	ib.Destroy()
 	shader.Destroy()
 }

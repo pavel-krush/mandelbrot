@@ -180,6 +180,10 @@ func (s *Shader) SetUniform1i(name string, v0 int32) {
 	gl.Uniform1i(s.getUniformLocation(name), v0)
 }
 
+func (s *Shader) SetUniform2f(name string, v0, v1 float32) {
+	gl.Uniform2f(s.getUniformLocation(name), v0, v1)
+}
+
 func (s *Shader) SetUniform4f(name string, v0, v1, v2, v3 float32) {
 	gl.Uniform4f(s.getUniformLocation(name), v0, v1, v2, v3)
 }

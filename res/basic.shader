@@ -7,13 +7,14 @@ layout(location=1) in vec2 texCoord;
 out vec2 v_TexCoord;
 
 uniform mat4 u_MVP; // model-view-projection matrix
+uniform vec2 coords;
 
 void main() {
-  // setup vertex position
-	gl_Position = u_MVP * position;
+    // setup vertex position
+    gl_Position = u_MVP * (position + vec4(coords, 0, 0));
 
-	// pass texture coordinates to fragment shader
-	v_TexCoord = texCoord;
+    // pass texture coordinates to fragment shader
+    v_TexCoord = texCoord;
 }
 
 #shader fragment
@@ -26,6 +27,6 @@ in vec2 v_TexCoord;
 uniform sampler2D u_Texture;
 
 void main() {
-  vec4 texColor = texture(u_Texture, v_TexCoord);
-  color = texColor;
+    vec4 texColor = texture(u_Texture, v_TexCoord);
+    color = texColor;
 }
