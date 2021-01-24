@@ -29,7 +29,7 @@ func GLDebugMessageCallback(source uint32,
 }
 
 const (
-	windowWidth = 640
+	windowWidth  = 640
 	windowHeight = 480
 )
 
@@ -58,6 +58,16 @@ func main() {
 
 	version := gl.GoStr(gl.GetString(gl.VERSION))
 	fmt.Println("OpenGL version", version)
+
+	// Create fractal render object
+	fractalObject := graph.NewObject2d()
+	fractalObject.AddVertex(mgl32.Vec2{0, 0}, mgl32.Vec2{0.0})
+	fractalObject.AddVertex(mgl32.Vec2{windowWidth, 0}, mgl32.Vec2{1.0, 0.0})
+	fractalObject.AddVertex(mgl32.Vec2{windowWidth, windowHeight}, mgl32.Vec2{1.0, 1.0})
+	fractalObject.AddVertex(mgl32.Vec2{0, windowHeight}, mgl32.Vec2{0.0, 1.0})
+	fractalObject.Compile()
+
+	return
 
 	positions := []float32{
 		0, 0, 0.0, 0.0,
@@ -99,6 +109,8 @@ func main() {
 
 	for !window.ShouldClose() {
 		renderer.Clear()
+
+		fractalObject.Draw()
 
 		shader.Bind()
 		texture.Bind(0)
