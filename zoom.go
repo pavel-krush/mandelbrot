@@ -35,14 +35,12 @@ func (z *ZoomerSimple) ZoomAt(
 	// Calculate new center coordinates: x
 	cx, cy, scale := s.GetCX(), s.GetCY(), s.GetScale()
 	newX := big.NewFloat(normX).SetPrec(cx.Prec())
-	newX.Mul(newX, s.GetPhysicalWidth())
 	newX.Mul(newX, s.GetScale())
 	newX.Add(newX, cx)
 	cx.Copy(newX)
 
 	// Calculate new center coordinates: y
 	newY := big.NewFloat(normY).SetPrec(cy.Prec())
-	newY.Mul(newY, s.GetPhysicalHeight())
 	newY.Mul(newY, s.GetScale())
 	newY.Add(newY, cy)
 	cy.Copy(newY)

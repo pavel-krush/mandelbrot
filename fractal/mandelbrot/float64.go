@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 )
 
-// MandelbrotFloat64 is a mandelbrot fractal generator that uses float64 numbers for calculations
+// Float64 is a mandelbrot fractal generator that uses float64 numbers for calculations
 type Float64 struct {
 	iterations int
 	threshold  float32
@@ -40,25 +40,21 @@ func (f *Float64) Generate(
 	go func() {
 		x, _ := cx.Float64()
 		y, _ := cy.Float64()
-		scalef64, _ := scale.Float64()
 
 		// Calculate physical width and height
 		physWidthF64, _ := physicalWidth.Float64()
 		physHeightF64, _ := physicalHeight.Float64()
 
-		physWidth := physWidthF64 * scalef64
-		physHeight := physHeightF64 * scalef64
-
 		width := target.Rect.Max.X
 		height := target.Rect.Max.Y
 
 		// Scale physical bounds
-		physMinX := x - (physWidth / 2)
-		physMinY := y - (physHeight / 2)
+		physMinX := x - (physWidthF64 / 2)
+		physMinY := y - (physHeightF64 / 2)
 
 		// Calculate pixel-to-physical scale
-		scaleX := physWidth / float64(width)
-		scaleY := physHeight / float64(height)
+		scaleX := physWidthF64 / float64(width)
+		scaleY := physHeightF64 / float64(height)
 
 		pal := palette.CreatePaletteGrayscaleRecursive(256)
 

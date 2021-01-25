@@ -70,6 +70,8 @@ func (a *Application) RegenerateFractal() {
 	lastUpdated := time.Now()
 	lastUpdatedPtr := &lastUpdated
 
+	started := time.Now()
+
 	progress := func(progress float32) {
 		now := time.Now()
 		if now.Sub(*lastUpdatedPtr) > time.Millisecond*100 {
@@ -83,6 +85,10 @@ func (a *Application) RegenerateFractal() {
 		a.LockRefreshTexture()
 		a.refreshTexture = true
 		a.UnlockRefreshTexture()
+
+		end := time.Now()
+		genTime := end.Sub(started)
+		fmt.Printf("Generation time: %s\n", genTime)
 	}
 
 	a.generator.Generate(
@@ -208,7 +214,8 @@ func (a *Application) Start() {
 	// Setup renderer
 	a.renderer = graph.NewRenderer()
 
-	a.generator = mandelbrot.NewFloat64Default()
+	//a.generator = mandelbrot.NewFloat64Default()
+	a.generator = mandelbrot.NewBigDefault()
 	a.zoomer = NewZoomerSimple()
 
 	a.RegenerateFractal()
