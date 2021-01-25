@@ -14,5 +14,10 @@ type Generator interface {
 	// cx, cy, scale - center coordinates and scale
 	// reportingFunc - callback that could be called during generation
 	// doneFunc - callback that must be called once after the generation is complete
-	Generate(target *image.RGBA, cx, cy, scale *big.Float, reportingFunc ProgressReportingFunc, doneFunc DoneFunc)
+	Generate(
+		target *image.RGBA,
+		cx, cy, scale *big.Float,
+		physicalWidth, physicalHeight *big.Float,
+		reportingFunc ProgressReportingFunc, doneFunc DoneFunc,
+	)
 }

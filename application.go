@@ -7,6 +7,7 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 	"image"
 	"log"
+	"mandelbrot/fractal"
 	"mandelbrot/fractal/mandelbrot"
 	"mandelbrot/graph"
 	"runtime"
@@ -14,41 +15,42 @@ import (
 	"time"
 )
 
-const (
-	initPhysWidth = 3.0
-	initPhysHeight = 2.0
-)
-
 func init() {
 	runtime.LockOSThread()
 }
 
 type Application struct {
-	window *glfw.Window
-	windowWidth int
-	windowHeight int
+	window      *glfw.Window
 	windowTitle string
 
 	state *State
 
 	renderer *graph.Renderer
 
-	fractalObject *graph.Object2D // Simple textured rectangle. Fractal will be rendered here
-	fractalImg *image.RGBA // The image object where fractal will be drawn
-	fractalTexture *graph.Texture // OpenGL texture which will be rendered on an fractalObject
-	shader *graph.Shader // The main shader
+	fractalObject  *graph.Object2D // Simple textured rectangle. Fractal will be rendered here
+	fractalImg     *image.RGBA     // The image object where fractal will be drawn
+	fractalTexture *graph.Texture  // OpenGL texture which will be rendered on an fractalObject
+	shader         *graph.Shader   // The main shader
 
-	refreshTexture bool
+	refreshTexture   bool // Do we need to refresh opengl texture from the buffer
 	refreshTextureMu sync.Mutex
+
+	cursorPos struct {
+		mu sync.Mutex
+		x  float64
+		y  float64
+	}
+
+	generator fractal.Generator // Current fractal generator
+	zoomer    Zoomer
 }
 
-func NewApplication(windowWidth, windowHeight int, windowTitle string) *Application {
-	ret := &Application{
-		windowWidth: windowWidth,
-		windowHeight: windowHeight,
-		windowTitle: windowTitle,
+func NewApplication(windowTitle string) *Application {
+	state := NewState()
 
-		state: NewState(),
+	ret := &Application{
+		windowTitle: windowTitle,
+		state:       state,
 	}
 
 	return ret
@@ -63,33 +65,45 @@ func (a *Application) UnlockRefreshTexture() {
 }
 
 func (a *Application) RegenerateFractal() {
-	cx, cy, scale := a.state.GetCoords()
+	fmt.Println(a.state)
 
 	lastUpdated := time.Now()
 	lastUpdatedPtr := &lastUpdated
 
 	progress := func(progress float32) {
 		now := time.Now()
-		if now.Sub(*lastUpdatedPtr) > time.Millisecond * 100 {
+		if now.Sub(*lastUpdatedPtr) > time.Millisecond*100 {
 			a.LockRefreshTexture()
 			a.refreshTexture = true
 			a.UnlockRefreshTexture()
 		}
-		fmt.Printf("%.2f%% done\n", progress * 100)
 	}
 
 	done := func() {
+		a.LockRefreshTexture()
 		a.refreshTexture = true
+		a.UnlockRefreshTexture()
 	}
 
-	generator := mandelbrot.NewFloat64Default()
-	generator.Generate(a.fractalImg, cx, cy, scale, progress, done)
+	a.generator.Generate(
+		a.fractalImg,
+		a.state.GetCX(),
+		a.state.GetCY(),
+		a.state.GetScale(),
+		a.state.GetPhysicalWidth(),
+		a.state.GetPhysicalHeight(),
+		progress,
+		done,
+	)
 }
 
 func (a *Application) Run() {
 	a.Start()
 
+	var fps graph.FPS
+
 	for !a.window.ShouldClose() {
+		//time.Sleep(time.Millisecond * 100)
 		// Refresh GL texture from buffer if requested to do so
 		a.LockRefreshTexture()
 		if a.refreshTexture {
@@ -108,6 +122,8 @@ func (a *Application) Run() {
 
 		a.window.SwapBuffers()
 		glfw.PollEvents()
+
+		fps.FrameRendered()
 	}
 
 	a.Terminate()
@@ -130,11 +146,13 @@ func (a *Application) Start() {
 	glfw.WindowHint(glfw.ContextVersionMinor, 1)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
-	a.window, err = glfw.CreateWindow(a.windowWidth, a.windowHeight, a.windowTitle, nil, nil)
+	a.window, err = glfw.CreateWindow(int(a.state.GetScreenWidth()), int(a.state.GetScreenHeight()), a.windowTitle, nil, nil)
 	if err != nil {
 		panic(err)
 	}
 	a.window.MakeContextCurrent()
+	a.window.SetMouseButtonCallback(a.MouseButtonCallback)
+	a.window.SetCursorPosCallback(a.CursorPosCallback)
 
 	glfw.SwapInterval(1)
 
@@ -150,7 +168,7 @@ func (a *Application) Start() {
 
 	// Create projection matrix that moves zero coordinates to left top corner and
 	// scales width and height to the window size
-	proj := mgl32.Ortho(0.0, float32(a.windowWidth), float32(a.windowHeight), 0, -1, 1)
+	proj := mgl32.Ortho(0.0, float32(a.state.GetScreenWidth()), float32(a.state.GetScreenHeight()), 0, -1, 1)
 
 	// Load main shader
 	a.shader, err = graph.NewShader("res/basic.shader")
@@ -163,11 +181,11 @@ func (a *Application) Start() {
 	// Create image buffer, the target for a fractal generating functions
 	a.fractalImg = image.NewRGBA(image.Rectangle{
 		Min: image.Point{X: 0, Y: 0},
-		Max: image.Point{X: a.windowWidth, Y: a.windowHeight},
+		Max: image.Point{X: int(a.state.GetScreenWidth()), Y: int(a.state.GetScreenHeight())},
 	})
 
 	// Create the texture which fractal will be rendered on
-	a.fractalTexture = graph.NewTexture(a.windowWidth, a.windowHeight)
+	a.fractalTexture = graph.NewTexture(int(a.state.GetScreenWidth()), int(a.state.GetScreenHeight()))
 
 	// Create fractal render object
 	a.fractalObject, err = graph.NewObject2d(a.shader, a.fractalTexture)
@@ -176,9 +194,9 @@ func (a *Application) Start() {
 	}
 
 	a.fractalObject.AddVertex(mgl32.Vec2{0, 0}, mgl32.Vec2{0.0, 0.0})
-	a.fractalObject.AddVertex(mgl32.Vec2{float32(a.windowWidth), 0}, mgl32.Vec2{1.0, 0.0})
-	a.fractalObject.AddVertex(mgl32.Vec2{float32(a.windowWidth), float32(a.windowHeight)}, mgl32.Vec2{1.0, 1.0})
-	a.fractalObject.AddVertex(mgl32.Vec2{0, float32(a.windowHeight)}, mgl32.Vec2{0.0, 1.0})
+	a.fractalObject.AddVertex(mgl32.Vec2{float32(a.state.GetScreenWidth()), 0}, mgl32.Vec2{1.0, 0.0})
+	a.fractalObject.AddVertex(mgl32.Vec2{float32(a.state.GetScreenWidth()), float32(a.state.GetScreenHeight())}, mgl32.Vec2{1.0, 1.0})
+	a.fractalObject.AddVertex(mgl32.Vec2{0, float32(a.state.GetScreenHeight())}, mgl32.Vec2{0.0, 1.0})
 	a.fractalObject.AddIndexBufferData(0, 1, 2)
 	a.fractalObject.AddIndexBufferData(2, 3, 0)
 
@@ -190,7 +208,9 @@ func (a *Application) Start() {
 	// Setup renderer
 	a.renderer = graph.NewRenderer()
 
-	// TOOD: remove
+	a.generator = mandelbrot.NewFloat64Default()
+	a.zoomer = NewZoomerSimple()
+
 	a.RegenerateFractal()
 }
 
@@ -198,4 +218,34 @@ func (a *Application) Terminate() {
 	a.fractalObject.Destroy()
 	a.fractalTexture.Destroy()
 	a.shader.Destroy()
+}
+
+func (a *Application) MouseButtonCallback(w *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
+	if action == glfw.Release {
+		a.cursorPos.mu.Lock()
+		x := a.cursorPos.x
+		y := a.cursorPos.y
+		a.cursorPos.mu.Unlock()
+		a.OnClick(x, y, button)
+	}
+}
+
+func (a *Application) CursorPosCallback(w *glfw.Window, xpos float64, ypos float64) {
+	a.cursorPos.mu.Lock()
+	a.cursorPos.x = xpos
+	a.cursorPos.y = ypos
+	a.cursorPos.mu.Unlock()
+}
+
+func (a *Application) OnClick(x float64, y float64, button glfw.MouseButton) {
+	var direction ZoomDirection
+	if button == glfw.MouseButton1 {
+		direction = ZoomDirectionIn
+	} else if button == glfw.MouseButton2 {
+		direction = ZoomDirectionOut
+	}
+
+	a.zoomer.ZoomAt(a.state, x, y, direction)
+
+	a.RegenerateFractal()
 }

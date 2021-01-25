@@ -12,19 +12,16 @@ import (
 
 // MandelbrotFloat64 is a mandelbrot fractal generator that uses float64 numbers for calculations
 type Float64 struct {
-	physWidth, physHeight float64
 	iterations int
 	threshold float32
 }
 
 func NewFloat64Default() *Float64 {
-	return NewFloat64(DefaultPhysWidth, DefaultPhysHeight, DefaultIterations, DefaultThreshold)
+	return NewFloat64(DefaultIterations, DefaultThreshold)
 }
 
-func NewFloat64(physWidth, physHeight float64, iterations int, threshold float32) *Float64 {
+func NewFloat64(iterations int, threshold float32) *Float64 {
 	ret := &Float64{
-		physWidth:  physWidth,
-		physHeight: physHeight,
 		iterations: iterations,
 		threshold: threshold,
 	}
@@ -36,6 +33,7 @@ func NewFloat64(physWidth, physHeight float64, iterations int, threshold float32
 func (f *Float64) Generate(
 	target *image.RGBA,
 	cx, cy, scale *big.Float,
+	physicalWidth, physicalHeight *big.Float,
 	reportingFunc fractal.ProgressReportingFunc,
 	doneFunc fractal.DoneFunc,
 ) {
@@ -44,12 +42,15 @@ func (f *Float64) Generate(
 		y, _ := cy.Float64()
 		scalef64, _ := scale.Float64()
 
+		// Calculate physical width and height
+		physWidthF64, _ := physicalWidth.Float64()
+		physHeightF64, _ := physicalHeight.Float64()
+
+		physWidth := physWidthF64 * scalef64
+		physHeight := physHeightF64 * scalef64
+
 		width := target.Rect.Max.X
 		height := target.Rect.Max.Y
-
-		// Calculate physical width and height
-		physWidth := f.physWidth * scalef64
-		physHeight := f.physHeight * scalef64
 
 		// Scale physical bounds
 		physMinX := x - (physWidth / 2)
