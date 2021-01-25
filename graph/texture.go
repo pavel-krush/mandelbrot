@@ -11,14 +11,14 @@ import (
 type Texture struct {
 	rendererId uint32
 
-	width int
+	width  int
 	height int
 }
 
 func NewTexture(width int, height int) *Texture {
 	ret := &Texture{
-		width:      width,
-		height:     height,
+		width:  width,
+		height: height,
 	}
 
 	gl.GenTextures(1, &ret.rendererId)
@@ -47,8 +47,7 @@ func (t *Texture) SetImageData(data []uint8) {
 }
 
 func LoadTexturePNG(filePath string) (*Texture, error) {
-	ret := &Texture{
-	}
+	ret := &Texture{}
 
 	imgFile, err := os.Open(filePath)
 	if err != nil {

@@ -6,10 +6,10 @@ import (
 )
 
 type State struct {
-	precision uint       // Floats precision
-	cx, cy    *big.Float // Center point
-	scale     *big.Float // Scale ratio
-	screenWidth, screenHeight float64 // Screen width and height in pixels
+	precision                     uint       // Floats precision
+	cx, cy                        *big.Float // Center point
+	scale                         *big.Float // Scale ratio
+	screenWidth, screenHeight     float64    // Screen width and height in pixels
 	physicalWidth, physicalHeight *big.Float // Physical coordinates that is currently rendered
 }
 
@@ -18,21 +18,21 @@ const (
 	DefaultCenterX         float64 = -0.7
 	DefaultCenterY         float64 = 0.0
 	DefaultScale           float64 = 1.0
-	DefaultScreenWidth            float64 = 640
-	DefaultScreenHeight           float64 = 480
-	DefaultPhysicalWidth float64 = 3.0
-	DefaultPhysicalHeight float64 = 2.0
+	DefaultScreenWidth     float64 = 640
+	DefaultScreenHeight    float64 = 480
+	DefaultPhysicalWidth   float64 = 3.0
+	DefaultPhysicalHeight  float64 = 2.0
 )
 
 func NewState() *State {
 	ret := &State{
-		precision: DefaultFloatsPrecision,
-		cx:        big.NewFloat(DefaultCenterX),
-		cy:        big.NewFloat(DefaultCenterY),
-		scale:     big.NewFloat(DefaultScale),
-		screenWidth: DefaultScreenWidth,
-		screenHeight: DefaultScreenHeight,
-		physicalWidth: big.NewFloat(DefaultPhysicalWidth),
+		precision:      DefaultFloatsPrecision,
+		cx:             big.NewFloat(DefaultCenterX),
+		cy:             big.NewFloat(DefaultCenterY),
+		scale:          big.NewFloat(DefaultScale),
+		screenWidth:    DefaultScreenWidth,
+		screenHeight:   DefaultScreenHeight,
+		physicalWidth:  big.NewFloat(DefaultPhysicalWidth),
 		physicalHeight: big.NewFloat(DefaultPhysicalHeight),
 	}
 

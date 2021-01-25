@@ -8,7 +8,7 @@ import (
 type VertexBufferLayoutElement struct {
 	typ        uint32 // type
 	typSize    uint32 // type size in bytes
-	count      int32 // elements count
+	count      int32  // elements count
 	normalized bool
 }
 

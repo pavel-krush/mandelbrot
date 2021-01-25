@@ -6,7 +6,6 @@ import (
 )
 
 type Renderer struct {
-
 }
 
 type Drawable interface {

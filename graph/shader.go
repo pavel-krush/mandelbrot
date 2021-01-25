@@ -14,8 +14,8 @@ import (
 )
 
 type Shader struct {
-	filePath string
-	vertexSource string
+	filePath       string
+	vertexSource   string
 	fragmentSource string
 
 	rendererId uint32
@@ -26,7 +26,7 @@ type Shader struct {
 func NewShader(filePath string) (*Shader, error) {
 	var err error
 	ret := &Shader{
-		filePath: filePath,
+		filePath:     filePath,
 		uniformCache: make(map[string]int32),
 	}
 

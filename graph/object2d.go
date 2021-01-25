@@ -8,13 +8,13 @@ import (
 )
 
 type Object2D struct {
-	shader *Shader
+	shader  *Shader
 	texture *Texture
-	va *VertexArray
-	ib *IndexBuffer
+	va      *VertexArray
+	ib      *IndexBuffer
 
 	vertices []mgl32.Vec4
-	ibData []uint32
+	ibData   []uint32
 }
 
 func NewObject2d(shader *Shader, texture *Texture) (*Object2D, error) {
@@ -27,7 +27,7 @@ func NewObject2d(shader *Shader, texture *Texture) (*Object2D, error) {
 	}
 
 	ret := &Object2D{
-		shader: shader,
+		shader:  shader,
 		texture: texture,
 	}
 

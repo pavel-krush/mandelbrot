@@ -44,14 +44,14 @@ func _createPaletteGrayscaleRecursive(palette color.Palette, l int, r int) {
 		return
 	}
 
-	mid := l + (r - l) / 2
+	mid := l + (r-l)/2
 	//_,_ = fmt.Fprintf(os.Stderr, "mid: %d\n", mid)
 
 	step := 255 / float64(mid-l)
 	//_,_ = fmt.Fprintf(os.Stderr, "step: %f\n", step)
 
 	for i := l; i <= mid; i++ {
-		val := uint8(float64(i - l) * step)
+		val := uint8(float64(i-l) * step)
 		palette[i] = color.RGBA{
 			R: val,
 			G: val,
@@ -68,10 +68,10 @@ func DrawPalette(palette color.Palette) {
 	height := 32
 
 	colorsCount := len(palette)
-	_,_ = fmt.Fprintf(os.Stderr, "colors count: %d\n", colorsCount)
+	_, _ = fmt.Fprintf(os.Stderr, "colors count: %d\n", colorsCount)
 
 	colorWidth := float64(width) / float64(colorsCount)
-	_,_ = fmt.Fprintf(os.Stderr, "color cell width: %f\n", colorWidth)
+	_, _ = fmt.Fprintf(os.Stderr, "color cell width: %f\n", colorWidth)
 
 	img := image.NewRGBA(image.Rectangle{
 		Min: image.Point{X: 0, Y: 0},

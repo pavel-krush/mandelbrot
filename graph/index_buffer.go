@@ -8,7 +8,7 @@ import (
 
 type IndexBuffer struct {
 	rendererId uint32
-	count int32
+	count      int32
 }
 
 func NewIndexBuffer(data []uint32) *IndexBuffer {
@@ -18,7 +18,7 @@ func NewIndexBuffer(data []uint32) *IndexBuffer {
 
 	gl.GenBuffers(1, &ret.rendererId)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ret.rendererId)
-	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, int(ret.count) * int(unsafe.Sizeof(uint32(0))), gl.Ptr(data), gl.STATIC_DRAW)
+	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, int(ret.count)*int(unsafe.Sizeof(uint32(0))), gl.Ptr(data), gl.STATIC_DRAW)
 
 	return &ret
 }

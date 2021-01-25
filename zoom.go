@@ -16,7 +16,7 @@ type Zoomer interface {
 	ZoomAt(s *State, x, y float64, zoomDirection ZoomDirection)
 }
 
-type ZoomerSimple struct {}
+type ZoomerSimple struct{}
 
 func NewZoomerSimple() *ZoomerSimple {
 	return &ZoomerSimple{}

@@ -18,7 +18,7 @@ type FPS struct {
 func (fps *FPS) FrameRendered() {
 	currentTick := time.Now()
 
-	currentFPS := 1 / math.Max(float64(currentTick.Sub(fps.lastTick)) / float64(time.Second), 1/FPSMax)
+	currentFPS := 1 / math.Max(float64(currentTick.Sub(fps.lastTick))/float64(time.Second), 1/FPSMax)
 
 	fps.lastTick = currentTick
 

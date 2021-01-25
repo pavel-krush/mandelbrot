@@ -13,7 +13,7 @@ import (
 // MandelbrotFloat64 is a mandelbrot fractal generator that uses float64 numbers for calculations
 type Float64 struct {
 	iterations int
-	threshold float32
+	threshold  float32
 }
 
 func NewFloat64Default() *Float64 {
@@ -23,7 +23,7 @@ func NewFloat64Default() *Float64 {
 func NewFloat64(iterations int, threshold float32) *Float64 {
 	ret := &Float64{
 		iterations: iterations,
-		threshold: threshold,
+		threshold:  threshold,
 	}
 
 	return ret
@@ -81,7 +81,7 @@ func (f *Float64) Generate(
 					value := mandelbrotComplex128(complex(physX, physY), f.iterations, f.threshold)
 
 					// convert it to the color and set pixel color
-					target.Set(x, y, pal[int(float32(len(pal)) * value)])
+					target.Set(x, y, pal[int(float32(len(pal))*value)])
 				}
 				atomic.AddInt32(linesDonePtr, 1)
 				reportingFunc(float32(atomic.LoadInt32(linesDonePtr)) / float32(height))

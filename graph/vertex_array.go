@@ -27,7 +27,7 @@ func (va *VertexArray) AddBuffer(vb *VertexBuffer, layout *VertexBufferLayout) {
 
 	var offset int
 	var i uint32
-	for i = 0; i < uint32(len(elements)); i ++ {
+	for i = 0; i < uint32(len(elements)); i++ {
 		element := elements[i]
 		gl.EnableVertexAttribArray(i)
 		gl.VertexAttribPointer(i, element.count, element.typ, element.normalized, stride, gl.PtrOffset(offset))
