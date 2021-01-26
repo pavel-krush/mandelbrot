@@ -8,7 +8,6 @@ import (
 	"image"
 	"log"
 	"mandelbrot/fractal"
-	"mandelbrot/fractal/mandelbrot"
 	"mandelbrot/graph"
 	"runtime"
 	"sync"
@@ -20,6 +19,8 @@ func init() {
 }
 
 type Application struct {
+	mu sync.Mutex
+
 	window      *glfw.Window
 	windowTitle string
 
@@ -33,10 +34,10 @@ type Application struct {
 	shader         *graph.Shader   // The main shader
 
 	refreshTexture   bool // Do we need to refresh opengl texture from the buffer
-	refreshTextureMu sync.Mutex
+
+	generating bool // is generating in progress
 
 	cursorPos struct {
-		mu sync.Mutex
 		x  float64
 		y  float64
 	}
@@ -56,19 +57,53 @@ func NewApplication(windowTitle string) *Application {
 	return ret
 }
 
-func (a *Application) ScheduleRefreshTexture() {
-	a.refreshTextureMu.Lock()
-	a.refreshTexture = true
-	a.refreshTextureMu.Unlock()
+func (a *Application) Lock() {
+	a.mu.Lock()
 }
 
-func (a *Application) ClearRefreshTexture() {
-	a.refreshTextureMu.Lock()
+func (a *Application) Unlock() {
+	a.mu.Unlock()
+}
+
+func (a *Application) scheduleRefreshTexture() {
+	a.Lock()
+	a.refreshTexture = true
+	a.Unlock()
+}
+
+func (a *Application) clearRefreshTexture() {
+	a.Lock()
 	a.refreshTexture = false
-	a.refreshTextureMu.Unlock()
+	a.Unlock()
+}
+
+func (a *Application) needRefreshTexture() bool {
+	a.Lock()
+	defer a.Unlock()
+	return a.refreshTexture
+}
+
+func (a *Application) startGenerating() {
+	a.Lock()
+	a.generating = true
+	a.Unlock()
+}
+
+func (a *Application) stopGenerating() {
+	a.Lock()
+	a.generating = false
+	a.Unlock()
+}
+
+func (a *Application) isGenerating() bool {
+	a.Lock()
+	defer a.Unlock()
+	return a.generating
 }
 
 func (a *Application) RegenerateFractal() {
+	a.startGenerating()
+
 	fmt.Println("Generating fractal")
 	fmt.Println(a.state)
 
@@ -80,12 +115,13 @@ func (a *Application) RegenerateFractal() {
 	progress := func(progress float32) {
 		now := time.Now()
 		if now.Sub(*lastUpdatedPtr) > time.Millisecond*100 {
-			a.ScheduleRefreshTexture()
+			a.scheduleRefreshTexture()
 		}
 	}
 
 	done := func() {
-		a.ScheduleRefreshTexture()
+		a.scheduleRefreshTexture()
+		a.stopGenerating()
 
 		end := time.Now()
 		genTime := end.Sub(started)
@@ -104,25 +140,36 @@ func (a *Application) RegenerateFractal() {
 	)
 }
 
+func (a *Application) SetGenerator(generator fractal.Generator) {
+	a.Lock()
+	a.generator = generator
+	a.Unlock()
+}
+
 func (a *Application) Run() {
+	if a.generator == nil {
+		panic("generator not set")
+	}
+
 	a.Start()
 
 	var fps graph.FPS
 
 	// refresh texture from buffer every 100ms
-	// todo: refactor it later somehow. i.e. refresh only while generating fractal
+	// todo: refactor it later somehow.
 	go func() {
 		ticker := time.NewTicker(time.Millisecond * 100)
 		<-ticker.C
-		a.ScheduleRefreshTexture()
+		if a.isGenerating() {
+			a.scheduleRefreshTexture()
+		}
 	}()
 
 	for !a.window.ShouldClose() {
-		//time.Sleep(time.Millisecond * 100)
 		// Refresh GL texture from buffer if requested to do so
-		if a.refreshTexture {
-			a.ClearRefreshTexture()
+		if a.needRefreshTexture() {
 			a.fractalTexture.SetImageData(a.fractalImg.Pix)
+			a.clearRefreshTexture()
 		}
 
 		// Clear scene
@@ -219,8 +266,6 @@ func (a *Application) Start() {
 	// Setup renderer
 	a.renderer = graph.NewRenderer()
 
-	//a.generator = mandelbrot.NewFloat64Default()
-	a.generator = mandelbrot.NewBigDefault()
 	a.zoomer = NewZoomerSimple()
 
 	a.RegenerateFractal()
@@ -234,22 +279,26 @@ func (a *Application) Terminate() {
 
 func (a *Application) MouseButtonCallback(w *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
 	if action == glfw.Release {
-		a.cursorPos.mu.Lock()
+		a.Lock()
 		x := a.cursorPos.x
 		y := a.cursorPos.y
-		a.cursorPos.mu.Unlock()
+		a.Unlock()
 		a.OnClick(x, y, button)
 	}
 }
 
 func (a *Application) CursorPosCallback(w *glfw.Window, xpos float64, ypos float64) {
-	a.cursorPos.mu.Lock()
+	a.Lock()
 	a.cursorPos.x = xpos
 	a.cursorPos.y = ypos
-	a.cursorPos.mu.Unlock()
+	a.Unlock()
 }
 
 func (a *Application) OnClick(x float64, y float64, button glfw.MouseButton) {
+	if a.generating {
+		return
+	}
+
 	var direction ZoomDirection
 	if button == glfw.MouseButton1 {
 		direction = ZoomDirectionIn
