@@ -28,7 +28,6 @@ func NewBig(iterations int, threshold float32) *Big {
 	return ret
 }
 
-var two = big.NewFloat(2.0)
 var half = big.NewFloat(0.5)
 
 // Generation function
@@ -53,8 +52,8 @@ func (f *Big) Generate(
 		physMinY = physMinY.Sub(cy, physMinY)
 
 		// Calculate pixel-to-physical scale
-		scaleX := big.NewFloat(0).Quo(physicalWidth, big.NewFloat(float64(target.Rect.Max.X)))
-		scaleY := big.NewFloat(0).Quo(physicalHeight, big.NewFloat(float64(target.Rect.Max.Y)))
+		scaleX := big.NewFloat(0).SetPrec(physicalWidth.Prec()).Quo(physicalWidth, big.NewFloat(float64(target.Rect.Max.X)))
+		scaleY := big.NewFloat(0).SetPrec(physicalHeight.Prec()).Quo(physicalHeight, big.NewFloat(float64(target.Rect.Max.Y)))
 
 		pal := palette.CreatePaletteGrayscaleRecursive(256)
 
@@ -95,28 +94,35 @@ func (f *Big) Generate(
 	}()
 }
 
+var two = big.NewFloat(2.0)
+
 func mandelbrotBig(x *big.Float, y *big.Float,iterations int, threshold float32) float32 {
 	thresholdBig := big.NewFloat(float64(threshold))
 
+	retX := big.NewFloat(0).SetPrec(x.Prec())
+	retY := big.NewFloat(0).SetPrec(y.Prec())
 
-	retX := big.NewFloat(0)
-	retY := big.NewFloat(0)
+	tmp := big.NewFloat(0).SetPrec(x.Prec())
 
-	tmp := big.NewFloat(0)
+	xSquared := big.NewFloat(0).SetPrec(retX.Prec())
+	ySquared := big.NewFloat(0).SetPrec(retY.Prec())
+
+	tmpSquaresDiff := big.NewFloat(0).SetPrec(retX.Prec())
+	tmp2xy := big.NewFloat(0).SetPrec(retX.Prec())
 
 	for i := 0; i < iterations; i++ {
 		// calc real part: x^2 - y^2
-		xSquared := big.NewFloat(0).Mul(retX, retX)
-		ySquared := big.NewFloat(0).Mul(retY, retY)
-		newRetX := big.NewFloat(0).Sub(xSquared, ySquared)
+		xSquared.Mul(retX, retX)
+		ySquared.Mul(retY, retY)
+		tmpSquaresDiff.Sub(xSquared, ySquared)
 
 		// calc imaginary part: 2*x*y
-		newRetY := big.NewFloat(0).Mul(retX, retY)
-		newRetY.Mul(newRetY, two)
+		tmp2xy.Mul(retX, retY)
+		tmp2xy.Mul(tmp2xy, two)
 
 		// add (x, y)
-		retX = newRetX.Add(newRetX, x)
-		retY = newRetY.Add(newRetY, y)
+		retX.Add(x, tmpSquaresDiff)
+		retY.Add(y, tmp2xy)
 
 		// calculate absolute value of complex number (retX, retY)
 		// reuse previous calculations of xSquared and ySquared

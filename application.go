@@ -65,6 +65,7 @@ func (a *Application) UnlockRefreshTexture() {
 }
 
 func (a *Application) RegenerateFractal() {
+	fmt.Println("Generating fractal")
 	fmt.Println(a.state)
 
 	lastUpdated := time.Now()

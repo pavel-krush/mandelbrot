@@ -14,7 +14,7 @@ type State struct {
 }
 
 const (
-	DefaultFloatsPrecision         = 80
+	DefaultFloatsPrecision         = 800
 	DefaultCenterX         float64 = -0.7
 	DefaultCenterY         float64 = 0.0
 	DefaultScale           float64 = 1.0
