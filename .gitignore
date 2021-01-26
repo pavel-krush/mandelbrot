@@ -1,5 +1,4 @@
 /.idea
-/*.png
-/images/*
 
-points.txt
+/mandelbrot
+/mandelbrot.exe
