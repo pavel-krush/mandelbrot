@@ -56,11 +56,15 @@ func NewApplication(windowTitle string) *Application {
 	return ret
 }
 
-func (a *Application) LockRefreshTexture() {
+func (a *Application) ScheduleRefreshTexture() {
 	a.refreshTextureMu.Lock()
+	a.refreshTexture = true
+	a.refreshTextureMu.Unlock()
 }
 
-func (a *Application) UnlockRefreshTexture() {
+func (a *Application) ClearRefreshTexture() {
+	a.refreshTextureMu.Lock()
+	a.refreshTexture = false
 	a.refreshTextureMu.Unlock()
 }
 
@@ -76,16 +80,12 @@ func (a *Application) RegenerateFractal() {
 	progress := func(progress float32) {
 		now := time.Now()
 		if now.Sub(*lastUpdatedPtr) > time.Millisecond*100 {
-			a.LockRefreshTexture()
-			a.refreshTexture = true
-			a.UnlockRefreshTexture()
+			a.ScheduleRefreshTexture()
 		}
 	}
 
 	done := func() {
-		a.LockRefreshTexture()
-		a.refreshTexture = true
-		a.UnlockRefreshTexture()
+		a.ScheduleRefreshTexture()
 
 		end := time.Now()
 		genTime := end.Sub(started)
@@ -109,16 +109,20 @@ func (a *Application) Run() {
 
 	var fps graph.FPS
 
+	// refresh texture from buffer every 100ms
+	// todo: refactor it later somehow. i.e. refresh only while generating fractal
+	go func() {
+		ticker := time.NewTicker(time.Millisecond * 100)
+		<-ticker.C
+		a.ScheduleRefreshTexture()
+	}()
+
 	for !a.window.ShouldClose() {
 		//time.Sleep(time.Millisecond * 100)
 		// Refresh GL texture from buffer if requested to do so
-		a.LockRefreshTexture()
 		if a.refreshTexture {
-			a.refreshTexture = false
-			a.UnlockRefreshTexture()
+			a.ClearRefreshTexture()
 			a.fractalTexture.SetImageData(a.fractalImg.Pix)
-		} else {
-			a.UnlockRefreshTexture()
 		}
 
 		// Clear scene
