@@ -18,7 +18,7 @@ func MustParseBigFloat(s string, precision uint) *big.Float {
 func main() {
 	app := NewApplication("Mandelbrot Fractal Explorer")
 
-	generatorStr := flag.String("generator", "big", "select generator: big or float64")
+	generatorStr := flag.String("generator", "float64", "select generator: big or float64")
 	flag.Parse()
 
 	if generatorStr == nil {
